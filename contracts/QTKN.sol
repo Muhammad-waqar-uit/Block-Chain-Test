@@ -8,10 +8,6 @@ contract QTKN is ERC20{
     address public owner;
     mapping(address=>bool) registerdStudents;
     mapping(address => uint256) balances;
-    modifier onlyOwner(){
-        require(msg.sender==owner);
-        _;
-    }
 
     event transfer(address indexed from, address indexed to, uint256 value);
  
@@ -20,7 +16,7 @@ contract QTKN is ERC20{
         owner=msg.sender;
     }
 
-    function totalSupply() public view override returns(uint256){
+    function totalSupply() public view override returns (uint256){
         return _totalSupply;
     }
 
