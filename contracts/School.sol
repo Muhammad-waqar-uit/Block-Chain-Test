@@ -6,7 +6,6 @@ contract School{
     address teacher;
     address owner;
     uint256 baseterm;
-    mapping (uint256=>coursename) courses;
     constructor(){
         owner=msg.sender;
         baseterm=90;

@@ -2,7 +2,7 @@
 pragma solidity ^0.8.9;
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
-contract certificate is ERC721,ERC721Me{
+contract certificate is ERC721{
     constructor() ERC721("QTKN","QTKN"){        
     }
 
