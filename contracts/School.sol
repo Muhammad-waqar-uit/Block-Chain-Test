@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.0;
+import './QTKN.sol';
 
 contract School {
     address public owner;
@@ -29,6 +30,11 @@ contract School {
     //mapping for course and link
     mapping (uint256=>string) links;
 
+    //mapping for the student to course
+    mapping(address=>uint256) studentenroll;
+
+    //clear_course
+    mapping(address=>bool) studentClearnance;
 
     constructor (){
         owner=msg.sender;
@@ -78,9 +84,16 @@ contract School {
     function getTeacherOfCourse(uint256 _courseId) public view returns (address) {
         return teachersofcourse[_courseId];
     }
+
+    function CourseCompletion(address student, uint256 _courseID,bool mark) public {
+
+
+    }
      
      function BuyCourse(uint256 _courseID, uint256 _pay) public payable {
-        
+        require(getCoursePrice(_courseID)==_pay);
+        studentenroll[msg.sender]=_courseID;
      }
 
+    function mint()
 }
