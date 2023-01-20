@@ -291,19 +291,18 @@ function mint (address _to) public onlyOwner {
         id += 1;
         _safeMint(_to, id);
     }
-
 }
 
 contract QCourse is ERC721URIStorage,Ownable{
-    uint256 public tokencounter=0;
+    uint256 public uritokencounter=0;
     string private uri='ipfs://bafkreigtgmofhs4zk33thjnadwzl3kac2wj2zmd44rdmentlo7wr5otza4';
 
     constructor() ERC721("Qcourse","QTKN"){
     }
 
     function mint(address _to) public onlyOwner {
-        tokencounter+=1;
-        _mint(_to, tokencounter);
-        _setTokenURI(tokencounter, uri);
+        uritokencounter+=1;
+        _mint(_to, uritokencounter);
+        _setTokenURI(uritokencounter, uri);
     }
 }

@@ -28,7 +28,7 @@ contract School is Ownable,ERC20 {
     event Newteacher(address indexed teacher);
     event Changebaseterm(uint256 newterm);
     //course complete
-    event CourseCompleted(address indexed student,uint256 courseid,bool marked);
+    event CourseCompleted(address indexed student,uint256 courseid);
 
 
     modifier onlyTeacher(){
@@ -43,7 +43,7 @@ contract School is Ownable,ERC20 {
 
 
 
-    constructor () ERC20('Q Course',"QTKN"){
+    constructor () ERC20('QCourse',"QTKN"){
         certification= new QCertificate();
         courseNFT= new QCourse();
         baseterm=90;
@@ -80,10 +80,10 @@ contract School is Ownable,ERC20 {
     }
 
 
-    function cousecomple(address _student, uint256 _courseid,bool _marked) public onlyTeacher{
+    function coursecomplete(address _student, uint256 _courseid) public onlyTeacher{
         require(courses[_courseid].students[_student]==status.enroll,"Student not enrolled");
         courses[_courseid].students[_student]=status.course_completed;
-        emit CourseCompleted(_student, _courseid, _marked=true);
+        emit CourseCompleted(_student, _courseid);
         certification.mint(_student);
     }
 
