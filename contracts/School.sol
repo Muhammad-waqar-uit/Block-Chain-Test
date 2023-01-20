@@ -1,99 +1,125 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.0;
 import './QTKN.sol';
+import './certificate.sol';
+contract School is Ownable,ERC20 {
+    //public price for conversion of coins
+    uint public eprice=0.01 ether;
+    //fix tax that would be calculated for course
+    uint256 public tax=3;
+    //base term scholl
+    uint256  baseterm=10;
 
-contract School {
-    address public owner;
-    uint256 private baseterm;
-    uint256 private tax=3;
+    //iniatilize the contract
+    QCertificate public certification;
+    QCourse public courseNFT;
+
+
+    //constant enumerations
+      enum status {enroll, not_enroll, course_completed}
+    //mapping for teacher 
+    mapping (address=>bool) teacher;
+
+    //created array unassigned size
+    Course[] public courses;
+
     //events
     event NewCourse(address indexed teacher,uint256 courseID, uint256 price);
     event Newteacher(address indexed teacher);
     event Changebaseterm(uint256 newterm);
-    //mapping for teacher 
-    mapping (address=>bool) teacher;
+    //course complete
+    event CourseCompleted(address indexed student,uint256 courseid,bool marked);
 
-    //mapping for the course and teacher assign
-    mapping (address=> mapping(uint256=>address)) public courses;
 
-    //mapping teacher of course
-    mapping(uint256=>address) public teachersofcourse;
+    modifier onlyTeacher(){
+        require(teacher[msg.sender]==true,"Not authorize to create a course");
+        _;
+    }
 
-    //mapping teacher share
-    mapping(uint256=>uint256) public teachershare; 
-    //course price mapping
-    mapping (uint256=>uint256) public courseprice;
+    function mint(uint256 _amount)public payable {
+            require(msg.value==(_amount*eprice),"Not having amount to generate tokens");
+            _mint(msg.sender, _amount);
+    }
 
-    //school share mapping
-    mapping (uint256=>uint256) public schoolshare;
 
-    //mapping for course and link
-    mapping (uint256=>string) links;
 
-    //mapping for the student to course
-    mapping(address=>uint256) studentenroll;
-
-    //clear_course
-    mapping(address=>bool) studentClearnance;
-
-    constructor (){
-        owner=msg.sender;
+    constructor () ERC20('Q Course',"QTKN"){
+        certification= new QCertificate();
+        courseNFT= new QCourse();
         baseterm=90;
         }
 
-    function createCourse(address _teacher,uint256 _courseId, uint _basePrice, uint _teacherShare,string memory courselink) public {
-        require(teacher[_teacher] == true, "You are not a registered teacher");
-         require(courses[_teacher][_courseId] == _teacher, "Course already exists for this");
-         require(_teacherShare <= baseterm, "Teacher share must be less than or equal to the base term set by the school"); 
-         links[_courseId]=courselink;
-         uint _schoolShare = baseterm - _teacherShare;
-         uint _price = (_basePrice * 3 / 100)+_basePrice+_schoolShare;
-         courseprice[_courseId] = _price;
-         teachershare[_courseId] = _teacherShare;
-         schoolshare[_courseId] = _schoolShare;
-         teachersofcourse[_courseId] = _teacher;
-         courses[_teacher][_courseId] = _teacher;
-         emit NewCourse(_teacher, _courseId, courseprice[_courseId]);
-    }
-    
-    function  addTeacher(address _name) public{
-     require(msg.sender==owner,"Only owner can add teacher");
-     require(_name==address(0),"Invalid Address");
-     require(teacher[_name]==false,'Teacher Already Exist');
+    function  addTeacher(address _name) public onlyOwner{
      teacher[_name]=true;
      emit Newteacher(_name);
     }
 
-    function changebaseterm(uint256 value)public {
-        require(msg.sender==owner,"Only owner can change the base terms");
+    function SetTax(uint256 _tax) public onlyOwner {
+        tax=_tax;
+    }
+
+     function changebaseterm(uint256 value)public onlyOwner{
         baseterm=value;
         emit Changebaseterm(value);
     }
-    function getCoursePrice(uint256 _courseId) public view returns (uint) {
-    return courseprice[_courseId];
+
+
+
+    struct Course{
+        string name;
+        uint256 courseId;
+        address teacher;
+        uint baseprice;
+        uint teachershare;
+        uint courseprice;
+        mapping(address => status) students;
     }
 
-    function getTeacherShare(uint256 _courseId) public view returns (uint) {
-        return teachershare[_courseId];
+    function Calculateprice(Course storage _course) internal view returns(uint) {
+        return(_course.baseprice+(_course.baseprice*(tax/100))+(((100-_course.teachershare)/100)*_course.baseprice));
     }
 
-    function getSchoolShare(uint256 _courseId) public view returns (uint) {
-        return schoolshare[_courseId];
+
+    function cousecomple(address _student, uint256 _courseid,bool _marked) public onlyTeacher{
+        require(courses[_courseid].students[_student]==status.enroll,"Student not enrolled");
+        courses[_courseid].students[_student]=status.course_completed;
+        emit CourseCompleted(_student, _courseid, _marked=true);
+        certification.mint(_student);
     }
 
-    function getTeacherOfCourse(uint256 _courseId) public view returns (address) {
-        return teachersofcourse[_courseId];
+    function createCourse(string memory _name,
+    address _teacher, uint256 _baseprice, uint256 _teachershare)public onlyTeacher{
+        require(100-_teachershare>=baseterm,"Share should be higher than baseterm");
+        require(msg.sender!=address(0),'ghosted account');
+        Course storage cr= courses.push();
+        cr.name=_name;
+        cr.courseId=courses.length-1;
+        cr.teacher=_teacher;
+        cr.baseprice=_baseprice;
+        cr.teachershare=_teachershare;
+        cr.courseprice=Calculateprice(cr);
+        courseNFT.mint(_teacher);
+        emit NewCourse(_teacher, courses.length-1, _baseprice);
     }
 
-    function CourseCompletion(address student, uint256 _courseID,bool mark) public {
-
-
+    function viewprice(uint _courseid) public view returns(uint){
+        return courses[_courseid].courseprice;
     }
-     
-     function BuyCourse(uint256 _courseID, uint256 _pay) public payable {
-        require(getCoursePrice(_courseID)==_pay);
-        studentenroll[msg.sender]=_courseID;
-     }
 
-    function mint()
+    function toOwner(Course storage c) private view returns (uint){
+        return((c.baseprice*(tax/100))+c.baseprice*((100-c.teachershare)/100));
+    }
+
+    function distributefee(Course storage _course) private {
+        transfer(owner(),toOwner(_course));
+        transfer(_course.teacher, _course.baseprice);
+    }
+    function enrollcourse(uint _courseid) public{
+        require(msg.sender!=address(0),"gosted account");
+        require(_courseid<courses.length,'Course does not exist');
+
+        Course storage cr=courses[_courseid];
+        cr.students[msg.sender]= status.enroll;
+        distributefee(cr);
+    }
 }
