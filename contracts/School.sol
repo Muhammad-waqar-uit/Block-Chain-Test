@@ -1,15 +1,21 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.0;
 import './QTKN.sol';
+import './Token.sol';
 import './certificate.sol';
-contract School is Ownable,ERC20 {
+contract School is Ownable {
     //public price for conversion of coins
     uint public eprice=0.01 ether;
     //fix tax that would be calculated for course
     uint256 public tax=3;
     //base term scholl
-    uint256  baseterm=10;
+    uint256  baseterm;
+    //initialize the erc
+    QTKN public ERC;
 
+    //initalization for the Qcourse Token
+
+    Token public Qtoken;
     //iniatilize the contract
     QCertificate public certification;
     QCourse public courseNFT;
@@ -47,17 +53,8 @@ contract School is Ownable,ERC20 {
         _;
     }
 
-    function mint(uint256 _amount)public payable {
-            require(msg.value==(_amount*eprice),"Not having amount to generate tokens");
-            _mint(msg.sender, _amount);
-    }
-
-
-
-    constructor () ERC20('QCourse',"QTKN"){
-        certification= new QCertificate();
-        courseNFT= new QCourse();
-        baseterm=90;
+    constructor (){
+        baseterm=10;
         }
 
     function  addTeacher(address _name) public onlyOwner{
@@ -74,7 +71,10 @@ contract School is Ownable,ERC20 {
         emit Changebaseterm(value);
     }
 
-
+    function  GetTokens(uint256 _amount)public payable {
+        require(msg.value==_amount*0.01 ether,'Amount is less you need more Eth!');
+        ERC.BuyTokens(_amount);
+    }
 
     struct Course{
         string name;
@@ -126,13 +126,13 @@ contract School is Ownable,ERC20 {
     }
 
     function distributefee(Course storage _course) private {
-        transfer(owner(),toOwner(_course));
-        transfer(_course.teacher, _course.baseprice);
+        ERC.transfer(owner(),toOwner(_course));
+        ERC.transfer(_course.teacher, _course.baseprice);
     }
     function enrollcourse(uint _courseid) public{
         require(msg.sender!=address(0),"gosted account");
         require(_courseid<courses.length,'Course does not exist');
-
+        Qtoken.BuyCourseToken(1);
         Course storage cr=courses[_courseid];
         cr.students[msg.sender]= status.enroll;
         distributefee(cr);

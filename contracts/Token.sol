@@ -1,14 +1,12 @@
-// SPDX-License-Identifier: GPL-3.0
-
-pragma solidity >=0.7.0 <0.9.0;
-
+// SPDX-License-Identifier: UNLICENSED
+pragma solidity ^0.8.0;
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import "@openzeppelin/contracts/utils/Context.sol";
+contract Token is Context, IERC20, IERC20Metadata{
 
-contract QTKN is Context, IERC20, IERC20Metadata {
-    mapping(address => uint256) private _balances;
+mapping(address => uint256) private _balances;
 
     mapping(address => mapping(address => uint256)) private _allowances;
 
@@ -18,8 +16,8 @@ contract QTKN is Context, IERC20, IERC20Metadata {
     string private _symbol;
 
     constructor() {
-        _name = 'Q Tokens' ;
-        _symbol = "QTKN";
+        _name = 'QCourse';
+        _symbol = 'QC-Token';
     }
 
     function name() public view virtual override returns (string memory) {
@@ -157,7 +155,7 @@ contract QTKN is Context, IERC20, IERC20Metadata {
 
     function _afterTokenTransfer(address from, address to, uint256 amount) internal virtual {}
 
-    function BuyTokens(uint256 _amount) public payable{
-        _mint(msg.sender,_amount);    
-        }
+    function BuyCourseToken(uint256 _Token)public{
+        _mint(msg.sender, _Token);
+    }
 }
