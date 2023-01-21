@@ -16,10 +16,21 @@ contract School is Ownable,ERC20 {
 
 
     //constant enumerations
-      enum status {enroll, not_enroll, course_completed}
+    enum status {enroll, not_enroll, course_completed}
     //mapping for teacher 
     mapping (address=>bool) teacher;
 
+    //mapping teacher of course
+    mapping(string=>address) public teachersofcourse;
+
+    //mapping teacher share
+    mapping(string=>uint256) public teachershare; 
+    //course price mapping
+    mapping (string=>uint256) public courseprice;
+
+    //school share mapping
+    mapping (string=>uint256) public schoolshare;
+    
     //created array unassigned size
     Course[] public courses;
 
@@ -98,6 +109,10 @@ contract School is Ownable,ERC20 {
         cr.baseprice=_baseprice;
         cr.teachershare=_teachershare;
         cr.courseprice=Calculateprice(cr);
+        teachersofcourse[_name] = _teacher;
+        teachershare[_name]=_teachershare;
+        schoolshare[_name]=100-_teachershare;
+        courseprice[_name]=cr.courseprice;
         courseNFT.mint(_teacher);
         emit NewCourse(_teacher, courses.length-1, _baseprice);
     }
@@ -121,5 +136,21 @@ contract School is Ownable,ERC20 {
         Course storage cr=courses[_courseid];
         cr.students[msg.sender]= status.enroll;
         distributefee(cr);
+    }
+
+     function getCoursePrice(string memory _name) public view returns (uint) {
+    return courseprice[_name];
+    }
+
+    function getTeacherShare(string memory _name) public view returns (uint) {
+        return teachershare[_name];
+    }
+
+    function getSchoolShare(string memory _name) public view returns (uint) {
+        return schoolshare[_name];
+    }
+
+    function getTeacherOfCourse(string memory _name) public view returns (address) {
+        return teachersofcourse[_name];
     }
 }
