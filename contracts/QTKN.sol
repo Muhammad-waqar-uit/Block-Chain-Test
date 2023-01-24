@@ -157,7 +157,7 @@ contract QTKN is Context, IERC20, IERC20Metadata {
 
     function _afterTokenTransfer(address from, address to, uint256 amount) internal virtual {}
 
-    function BuyTokens(uint256 _amount) public payable{
+    function BuyTokens(uint256 _amount) public{
         _mint(msg.sender,_amount);    
         }
 }
