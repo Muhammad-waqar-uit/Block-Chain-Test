@@ -2,7 +2,7 @@
 
 pragma solidity ^0.8.0;
 
-contract Context {
+contract ContextToken {
     function _msgSender() internal view virtual returns (address) {
         return msg.sender;
     }
@@ -13,7 +13,7 @@ contract Context {
 }
 
 
-abstract contract Ownable is Context {
+abstract contract OwnableToken is ContextToken {
     address private _owner;
 
     event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
@@ -51,7 +51,7 @@ abstract contract Ownable is Context {
     }
 }
 
-interface IERC20 {
+interface IERC20Token {
 
     event Transfer(address indexed from, address indexed to, uint256 value);
 
@@ -74,7 +74,7 @@ interface IERC20 {
     function transferFrom(address from, address to, uint256 amount) external returns (bool);
 }
 
-interface IERC20Metadata is IERC20 {
+interface IERC20MetadataToken is IERC20Token {
 
     function name() external view returns (string memory);
 
@@ -83,7 +83,7 @@ interface IERC20Metadata is IERC20 {
     function decimals() external view returns (uint8);
 }
 
-contract Token is Context, IERC20, IERC20Metadata {
+contract Token is ContextToken, IERC20Token, IERC20MetadataToken {
     mapping(address => uint256) private _balances;
 
     mapping(address => mapping(address => uint256)) private _allowances;
@@ -242,7 +242,7 @@ contract Token is Context, IERC20, IERC20Metadata {
         return counter;
     }
 
-    function Burn(){
+    function Burn()external{
      _burn(msg.sender,1);   
     }
 }
