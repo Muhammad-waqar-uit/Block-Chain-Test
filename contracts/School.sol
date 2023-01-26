@@ -15,19 +15,27 @@ contract School is Ownable {
     //course price mapping 
     mapping(uint256=>uint256) courseprice;
 
+    //Course Mapping
+    mapping (uint256 => mapping (uint256 => address)) studentEnrollement;
+
     //graduate mapping
-    mapping(uint256=>mapping (address=>bool)) graduated;
+    mapping(uint256 => mapping(uint256 => mapping(address => bool))) Graduate;
     //base term scholl
     uint256  baseterm;
     //Qtkn initialized
     QTKN public ERC;
     //token for each course
-    UniqueToken public Utoken;
+    Token public Utoken;
 
     QCourse public courseNFt;
 
+    QCertificate public Ctf;
     constructor (){
         baseterm=10;
+        courseNFt= New QCourse();
+        Ctf= New QCertificate();
+        ERC=New QTKN();
+        Utoken=New Token();
          }
 
     struct Course{
@@ -40,6 +48,10 @@ contract School is Ownable {
          }
     //events
     event NewCourse(address indexed teacher,uint256 courseID,string coursename, uint256 price);
+    event BaseTermChange(address indexed from,uint256 base);
+    event Enrolled(address indexed student,uint256 tokenid,uint256 coourseid);
+    event Graduated(address indexed student,uint256 tokenid,uint256 coourseid,bool clear);
+    event ClaimedNFTCertificate(address indexed student,uint256 tokenid,uint256 coourseid,bool check);
     //courses mapping;
     mapping(uint256=> Course) public courses;
     function createCourse(string memory _name,uint256 _courseID,address _teacher,uint256 _teacherShare,uint256 _basePrice )public{
@@ -53,14 +65,15 @@ contract School is Ownable {
         courses[_courseID]=Course(_courseID,_name,_teacher,_teacherShare,_basePrice,true);
         courseTeacher[_courseID]=_teacher;
         teachershare[_courseID]=_teacherShare;
-        courseprice[_courseID]=calculatePrice(courses[_courseID]);
+        courseprice[_courseID] = coursePricecalculator(_basePrice,_teacherShare);
         emit NewCourse(_teacher,_courseID,_name,_basePrice);
-        courseNFt.mint(_teacher);
+        courseNFt.mint(msg.sender);
     }
 
     function ChangeBaseTerm(uint256 _terms)public{
         require(msg.sender==owner(),"Only owner can change base terms");
         baseterm=_terms;
+        emit BaseTermChange(msg.sender,_term);
     }
 
     function  GetTokens(uint256 _amount)public payable {
@@ -68,37 +81,64 @@ contract School is Ownable {
         ERC.BuyTokens(_amount);
     }
 
-    function calculatePrice(Course storage _course) internal view returns (uint) {
-        return (_course.baseprice + calculateSharePrice(_course) + calculateTaxPrice(_course));
+    function coursePricecalculator(uint256 _basePrice,uint256 _teacherShare) private view returns (uint){
+        return (calculatePercentage(_basePrice,_teacherShare)+calculateTax(calculatePercentage(_basePrice,_teacherShare)));
     }
 
-    //calculate share price
-    function calculateSharePrice(Course storage _course) private view returns (uint) {
-        return (_course.baseprice * _course.teachershare / 100);
+    function calculatePercentage(uint base, uint share) public pure returns (uint) {
+    return (base * 100) / share;
     }
 
-    //calculate tax price
-    function calculateTaxPrice(Course storage _course) private view returns (uint) {
-        return _course.baseprice * tax / 100;
+    function calculateTax(uint amount) public pure returns (uint) {
+    return amount * 3 / 100;
     }
 
 
-    function Enroll(uint256 _courseID) public payable{
+    function Enroll(uint256 _courseID) public{
         require(courses[_courseID].registered==true,"Course Does not exist");
-        require(msg.value==courseprice[_courseID],"You need more token");
+        require(ERC.balanceOf(msg.sender)==courseprice[_courseID],"You need more token");
         require(msg.sender==address(0),'user not visible');
-        Course storage cr= courses[_courseID];
-        Utoken.mint(msg.sender);
-        DistributeFee(cr);
-    }
-
-
-    function DistributeFee(Course storage _course) private {
-        ERC.transfer(owner(),  calculateSharePrice(_course) + calculateTaxPrice(_course));
-        ERC.transfer(_course.teacher,  _course.baseprice);
+        Utoken.EnrollementToken();
+        studentEnrollement[Utoken.counter()][_courseID]=msg.sender;
+        graduate[Utoken.counter()][_courseID][msg.sender]=false;
+        Course storage c=courses[_courseID]
+        ERC.transferFrom(msg.sender,c.teacher,c.baseprice);
+        ERC.transferFrom(msg.sender,this(address),c.baseprice-coursePricecalculator(c.baseprice,c.teachershare));
+        emit Enrolled(msg.sender,Utoken.counter(),_courseID);
     }
 
     function ViewPrice(uint256 _courseID)public view returns(uint) {
          return courseprice[_courseID];
     }
+
+
+    function Graduate(uint256 _tokenid,uint256 _courseID,address _student)public{
+        Course storage c=courses[_courseID];
+        require(msg.sender==c.teacher);
+        require(studentEnrollement[_tokenid][_courseID]=_student,'Not Enrolled in the course');
+        require(!Graduate[_tokenid][_courseID][_student], "Already Graduated");
+        Graduate[_tokenid][_courseID][_student]=true;
+        emit Graduated(msg.sender,_tokenid,_courseID,true);
     }
+
+
+
+    function Claim(uint256 _tokenid,uint256 _courseID)public{
+        require(msg.sender==studentEnrollement[_tokenid][_courseID],"Your are Not enrolled");
+        require(Graduate[_tokenid][_courseID][msg.sender]==true,"You are not graduate yet!.")
+        Ctf.mint(msg.sender);
+        Utoken.Burn();
+        emit ClaimedNFTCertificate(msg.sender,_tokenid,_courseID,true);
+    }
+
+
+    function viewTerm() public view returns(uint){
+        return baseterm;
+    }
+    }
+
+//     mapping(uint256 => mapping(uint256 => address)) public nestedMapping;
+// mapping(uint256 => bool) public wholeMapping;
+// nestedMapping[key1][key2] = value;
+// address value = nestedMapping[key1][key2];
+// wholeMapping[key] = value;

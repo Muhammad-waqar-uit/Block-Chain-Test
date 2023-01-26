@@ -284,7 +284,7 @@ abstract contract EERC721 is Context, ERC165, IERC721, IERC721Metadata {
 
 contract QCertificate is EERC721, Ownable{
     uint256 public id=0;
-    constructor() EERC721 ("QTKN","QTKN"){
+    constructor() EERC721 ("QCertificate","QCTKN"){
 
     }
 function mint (address _to) public onlyOwner {
@@ -297,7 +297,7 @@ contract QCourse is ERC721URIStorage,Ownable{
     uint256 public uritokencounter=0;
     string private uri='ipfs://bafkreigtgmofhs4zk33thjnadwzl3kac2wj2zmd44rdmentlo7wr5otza4';
 
-    constructor() ERC721("Qcourse","QTKN"){
+    constructor() ERC721("Qcourse","QCTKN"){
     }
 
     function mint(address _to) public onlyOwner {
