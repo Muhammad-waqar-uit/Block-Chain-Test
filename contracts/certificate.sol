@@ -287,7 +287,7 @@ contract QCertificate is EERC721, Ownable{
     constructor() EERC721 ("QCertificate","QCTKN"){
 
     }
-function mint (address _to) public onlyOwner {
+function mint (address _to)  external {
         id += 1;
         _safeMint(_to, id);
     }
@@ -300,7 +300,7 @@ contract QCourse is ERC721URIStorage,Ownable{
     constructor() ERC721("Qcourse","QCTKN"){
     }
 
-    function mint(address _to) public onlyOwner {
+    function mint(address _to) external {
         uritokencounter+=1;
         _mint(_to, uritokencounter);
         _setTokenURI(uritokencounter, uri);
