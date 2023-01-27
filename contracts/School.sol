@@ -90,7 +90,7 @@ contract School is Ownable {
     }
 
     function calculateTax(uint amount) public pure returns (uint) {
-    return amount * 3 / 100;
+    return amount * tax / 100;
     }
 
 

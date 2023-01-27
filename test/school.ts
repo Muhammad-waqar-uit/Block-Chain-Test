@@ -139,14 +139,22 @@ describe("School", function () {
     await expect(contract.connect(student).Enroll(1));
   });});
 
-  describe('Course buy',function(){
+  describe('Course Price Calculations',function(){
     it("Should calculate the course price correctly", async function () {
       const { contract ,price, teacher, student } = await loadFixture(CourseCreated);
 
-
-      await contract.connect(student).GetTokens(200, {value: price})
-
-      expect(await contract.ViewPrice(1)).to.equal((170).toString());
+      // await contract.connect(student).GetTokens(200, {value: price})
+      const course2=await contract.createCourse("English",102, teacher.address, 80, 1000);
+      const course3=await contract.createCourse("Scinece",103, teacher.address, 70, 800);
+      const course4=await contract.createCourse("Scinece",104, teacher.address, 50, 900);
+      const course5=await contract.createCourse("Scinece",105, teacher.address, 90, 500);
+      const course6=await contract.createCourse("Scinece",106, teacher.address, 30, 650);
+      expect(await contract.ViewPrice(101)).to.equal((170));
+      expect(await contract.ViewPrice(102)).to.equal((1287));
+      expect(await contract.ViewPrice(103)).to.equal((1176));
+      expect(await contract.ViewPrice(104)).to.equal((1854));
+      expect(await contract.ViewPrice(105)).to.equal((571));
+      expect(await contract.ViewPrice(106)).to.equal((2230));
   });});
 
 
