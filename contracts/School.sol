@@ -135,6 +135,10 @@ contract School is Ownable {
     function viewTerm() public view returns(uint){
         return baseterm;
     }
+
+    function isenrolled(uint256 _tokenid,uint256 _courseid)public view returns (address){
+        return studentEnrollement[_tokenid][_courseid];
+    }
     }
 
 //     mapping(uint256 => mapping(uint256 => address)) public nestedMapping;

@@ -47,7 +47,7 @@ import { time, loadFixture } from "@nomicfoundation/hardhat-network-helpers";
 import { anyValue } from "@nomicfoundation/hardhat-chai-matchers/withArgs";
 import { expect } from "chai";
 import { ethers } from "hardhat";
-import { QTKN__factory, School, School__factory } from "../typechain-types";
+import { QTKN__factory, School, School__factory,QTKN,Token,Token__factory } from "../typechain-types";
 import { BigNumber} from "ethers";
 
 describe("School", function () {
@@ -57,7 +57,7 @@ describe("School", function () {
   async function deployOneYearLockFixture() {
     const [school, teacher, student] = await ethers.getSigners();
 
-    const price = ethers.utils.parseEther("2");
+    const price = ethers.utils.parseEther("8");
 
     const Contract:School__factory = await ethers.getContractFactory("School");
     const contract:School = await Contract.deploy();
@@ -69,19 +69,36 @@ describe("School", function () {
     
     const CourseNftContract = await ethers.getContractFactory("QCourse");
     const courseNftContract = CourseNftContract.attach(await contract.courseNFt())
-  
-    console.log(`School/ERC20 contract: ${contract.address}\nCertificate contract address: ${certificateContract.address}\nCourseNFT contract address: ${courseNftContract.address}`);
-    return { certificateContract, contract, school, teacher, student, price, courseNftContract };
+    
+
+    const Qtoken= await ethers.getContractFactory("QTKN");
+    const Qtokencontract=Qtoken.attach(await contract.ERC());
+    const Token=await ethers.getContractFactory("Token");
+    const Utoken=await Token.attach(await contract.Utoken());
+    console.log(`School contract: ${contract.address}\nCertificate contract address: ${certificateContract.address}\nCourseNFT contract address: ${courseNftContract.address}\nERC20 address: ${Qtokencontract.address}\n 
+    ERc20Utoken : ${Utoken.address}`);
+    return { certificateContract, contract, school, teacher, student, price, courseNftContract,Qtokencontract,Utoken};
   }
 
   async function CourseCreated() {
-    const { certificateContract, contract, school, teacher, student, price, courseNftContract } = await loadFixture(
+    const { certificateContract, contract, school, teacher, student, price, courseNftContract,Qtokencontract,Utoken } = await loadFixture(
       deployOneYearLockFixture
     );
     await contract.connect(teacher).createCourse("maths",101, teacher.address, 60, 100);
 
     return { certificateContract, contract, school, teacher, student, price, courseNftContract };
   }
+  describe("Student Buy Tokens", function(){
+    it("Should buy and verify tokens",async function () {
+      const { certificateContract, contract, school, teacher, student, price, courseNftContract,Qtokencontract,Utoken } = await loadFixture(
+        deployOneYearLockFixture
+      );
+     const Tokens=await contract.connect(student).GetTokens(800,{value:price});
+        console.log(Tokens);
+     const Balance= await Qtokencontract.balanceOf(student.address);
+        console.log(Balance);
+    //  expect(await Qtokencontract.balanceOf(student.address)).to.equal(800);
+  });
 
   describe("Deployment", function () {
     it("Should set the right price, tax, student status, owner", async function () {
@@ -119,14 +136,14 @@ describe("School", function () {
       const {contract}= await loadFixture(
         CourseCreated
       );
-      const price=await contract.ViewPrice(1);
-      // await expect(price).to.equal(170);
+      const price=await contract.ViewPrice(101);
+     await expect(price).to.equal(170);
     })
   });
 
   describe('Enroll',function(){
     it("Should revert with the right error if course id does not exist", async function () {
-      const { contract , teacher, student } = await loadFixture(CourseCreated);
+      const { contract, student } = await loadFixture(CourseCreated);
 
 
       await expect(contract.connect(student).Enroll(4));
@@ -156,6 +173,4 @@ describe("School", function () {
       expect(await contract.ViewPrice(105)).to.equal((571));
       expect(await contract.ViewPrice(106)).to.equal((2230));
   });});
-
-
-});
+});});
