@@ -5,6 +5,8 @@ import './certificate.sol';
 import './Token.sol';
 import "@openzeppelin/contracts/access/Ownable.sol";
 contract School is Ownable {
+    uint256 public price=100;
+    address private Owner;
     //fix tax that would be calculated for course
     uint256 private constant tax = 3;
     //teacher mapping to course
@@ -21,7 +23,7 @@ contract School is Ownable {
     //graduate mapping
     mapping(uint256 => mapping(uint256 => mapping(address => bool))) Graduate;
     //base term scholl
-    uint256  public baseterm;
+    uint256  baseterm;
     //Qtkn initialized
     QTKN public ERC;
     //token for each course
@@ -30,14 +32,20 @@ contract School is Ownable {
     QCourse public courseNFt;
 
     QCertificate public Ctf;
-    constructor (){
-        baseterm = 10;
-        courseNFt = new QCourse();
-        Ctf = new QCertificate();
-        ERC = new QTKN();
-        Utoken = new Token();
-         }
 
+    modifier OnlyOwner{
+        require(msg.sender==Owner,"You are not the owner");
+        _;
+    }
+    constructor (address _qtoken,address _ctf,address _token2,address _cert){
+        Owner=msg.sender;
+        baseterm=10;
+        courseNFt= QCourse(_cert);
+        Ctf=  QCertificate(_ctf);
+        ERC= QTKN(_qtoken);
+        Utoken= Token(_token2);
+         }
+    
     struct Course{
         uint256  courseId;
         string courseName;
@@ -76,12 +84,13 @@ contract School is Ownable {
         emit BaseTermChange(msg.sender,_terms);
     }
 
-    function  GetTokens(uint256 _amount)public payable {
-        require(msg.value==_amount*0.01 ether,'Amount is less you need more Eth!');
-        ERC.BuyTokens(_amount);
+    function  GetTokens()public payable {
+        require(msg.value>=0 ether,"Amount is less you need more Eth!");
+        uint256 numberoftoken=msg.value*price;
+        ERC.BuyTokens(numberoftoken,msg.sender);
     }
 
-    function coursePricecalculator(uint256 _basePrice,uint256 _teacherShare) private pure returns (uint){
+    function coursePricecalculator(uint256 _basePrice,uint256 _teacherShare) private view returns (uint){
         return (calculatePercentage(_basePrice,_teacherShare)+calculateTax(calculatePercentage(_basePrice,_teacherShare)));
     }
 
@@ -90,20 +99,20 @@ contract School is Ownable {
     }
 
     function calculateTax(uint amount) public pure returns (uint) {
-    return amount * tax / 100;
+    return amount * 3 / 100;
     }
 
 
     function Enroll(uint256 _courseID) public{
         require(courses[_courseID].registered==true,"Course Does not exist");
-        require(ERC.balanceOf(msg.sender)==courseprice[_courseID],"You need more token");
+        require(ERC.balanceOf(msg.sender)>=courseprice[_courseID],"You need more token");
         require(msg.sender==address(0),'user not visible');
         Utoken.EnrollementToken();
         studentEnrollement[Utoken.counter()][_courseID]=msg.sender;
         Graduate[Utoken.counter()][_courseID][msg.sender]=false;
         Course storage c=courses[_courseID];
         ERC.transferFrom(msg.sender,c.teacher,c.baseprice);
-        ERC.transferFrom(msg.sender,address(this),coursePricecalculator(c.baseprice,c.teachershare)-c.baseprice);
+        ERC.transferFrom(msg.sender,address(Owner),c.baseprice-coursePricecalculator(c.baseprice,c.teachershare));
         emit Enrolled(msg.sender,Utoken.counter(),_courseID);
     }
 
@@ -112,10 +121,10 @@ contract School is Ownable {
     }
 
 
-    function call_Graduate(uint256 _tokenid,uint256 _courseID,address _student)public{
+    function Graduation(uint256 _tokenid,uint256 _courseID,address _student)public{
         Course storage c=courses[_courseID];
         require(msg.sender==c.teacher);
-        require(studentEnrollement[_tokenid][_courseID]==_student,'Not Enrolled in the course');
+        // require(studentEnrollement[_tokenid][_courseID]=_student,'Not Enrolled in the course');
         require(!Graduate[_tokenid][_courseID][_student], "Already Graduated");
         Graduate[_tokenid][_courseID][_student]=true;
         emit Graduated(msg.sender,_tokenid,_courseID,true);
@@ -134,10 +143,6 @@ contract School is Ownable {
 
     function viewTerm() public view returns(uint){
         return baseterm;
-    }
-
-    function isenrolled(uint256 _tokenid,uint256 _courseid)public view returns (address){
-        return studentEnrollement[_tokenid][_courseid];
     }
     }
 
