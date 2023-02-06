@@ -1,48 +1,3 @@
-// const { expect } = require("chai");
-// const { ethers } = require("hardhat");
-
-// describe("School contract", function(){
-//     let School;
-//     let SchoolToken;
-//     let school;
-//     let teacher;
-//     let student;
-
-//   beforeEach(async function() {
-//     School = await ethers.getContractFactory("School");
-//     [school,teacher,student]=await ethers.getSigners();
-//     SchoolToken=await School.deploy;
-//   });
-
-//   describe("Create Course",function(){
-//     it("Should Create Course",async function(){
-//         const tx= await SchoolToken.createCourse("Maths 101",1,teacher.address,60,100);
-//         await tx.wait();
-//         const course= SchoolToken.courses(1);
-//         expect(course.courseName).to.equal("Maths 101");
-//     })
-//   })
-// //   it("should create a new course", async () => {
-// //     const tx = await School.createCourse("Math 101", 1, teacher.address, 10, 1);
-// //     await tx.wait();
-// //     const course = await School.courses(1);
-// //     expect(course.courseName).to.equal("Math 101");
-// //     expect(course.teacher).to.equal(teacher.address);
-// //     expect(course.teacherShare).to.equal(10);
-// //     expect(course.basePrice).to.equal(1);
-// //   });
-
-// //   it("should enroll a student in a course", async () => {
-// //     await School.createCourse("Math 101", 1, teacher.address, 10, 1);
-// //     await School.getTokens(10, { value: ethers.utils.parseEther("0.1") });
-// //     await student.sendTransaction({ to: School.address, value: ethers.utils.parseEther("0.01") });
-// //     const tx = await School.enroll(1);
-// //     await tx.wait();
-// //     const enrollement = await school.studentEnrollement(1, 1);
-// //     expect(enrollement).to.equal(student.address);
-// //   });
-
-// });
 import { time, loadFixture } from "@nomicfoundation/hardhat-network-helpers";
 import { anyValue } from "@nomicfoundation/hardhat-chai-matchers/withArgs";
 import { expect } from "chai";
@@ -51,16 +6,28 @@ import { QTKN__factory, School, School__factory,QTKN,Token,Token__factory } from
 import { BigNumber} from "ethers";
 
 describe("School", function () {
-  // We define a fixture to reuse the same setup in every test.
-  // We use loadFixture to run this setup once, snapshot that state,
-  // and reset Hardhat Network to that snapshot in every test.
   async function deployOneYearLockFixture() {
     const [school, teacher, student] = await ethers.getSigners();
 
     const price = ethers.utils.parseEther("8");
+    const token = await ethers.getContractFactory("QTKN");
+            const deploytoken = await token.deploy();
+            console.log("QTKN Address : ",deploytoken.address);
+    
+            const token2 = await ethers.getContractFactory("Token");
+            const deploytoken2 = await token2.deploy();
+            console.log("StudentToken Address : ",deploytoken2.address);
+    
+            const CourseNft = await ethers.getContractFactory("QCourse");
+            const deployCourseNft = await CourseNft.deploy();
+            console.log("Course NFT Address : ",deployCourseNft.address);
+    
+            const CertNft = await ethers.getContractFactory("QCertificate");
+            const deploycertnft = await CertNft.deploy();
+            console.log("Certificate NFT Address : ",deploycertnft.address);
 
     const Contract:School__factory = await ethers.getContractFactory("School");
-    const contract:School = await Contract.deploy();
+    const contract:School = await Contract.deploy(deploytoken.address,deploycertnft.address,deploytoken2.address,deployCourseNft.address,);
 
     await contract.deployed();
 
@@ -93,7 +60,7 @@ describe("School", function () {
       const { certificateContract, contract, school, teacher, student, price, courseNftContract,Qtokencontract,Utoken } = await loadFixture(
         deployOneYearLockFixture
       );
-     const Tokens=await contract.connect(student).GetTokens(800,{value:price});
+     const Tokens=await contract.connect(student).GetTokens({value: price});
         console.log(Tokens);
      const Balance= await Qtokencontract.balanceOf(student.address);
         console.log(Balance);
@@ -173,4 +140,20 @@ describe("School", function () {
       expect(await contract.ViewPrice(105)).to.equal((571));
       expect(await contract.ViewPrice(106)).to.equal((2230));
   });});
-});});
+  describe('Enroll',function(){
+    it("Should Enroll in the course", async function () {
+      const { contract, student } = await loadFixture(CourseCreated);
+
+
+      await expect(contract.connect(student).Enroll(101));
+  });
+});
+describe('Graduate',function(){
+    it("Should Enroll in the course", async function () {
+      const { contract, student ,teacher} = await loadFixture(CourseCreated);
+
+      await contract.connect(teacher).Graduation(1,101,student.address);
+  });
+});
+});
+});

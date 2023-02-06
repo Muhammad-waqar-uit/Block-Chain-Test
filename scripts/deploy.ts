@@ -1,20 +1,32 @@
 import { ethers } from "hardhat";
 import { School, School__factory } from "../typechain-types";
 
+async function Main() {
 
-async function main() {
     const [school,teacher,student] =await ethers.getSigners();
-
     const School =await ethers.getContractFactory("School");
 
-    const deploy =await School.deploy();
-    console.log("School contract address : ",deploy.address);
-    
-}
+    const token = await ethers.getContractFactory("QTKN");
+    const deploytoken =await token.deploy();
+    console.log("Qtkn Address : ", deploytoken.address);
 
-main()
-.then(()=> process.exit(0))
-.catch((error)=>{
+    const token2 = await ethers.getContractFactory("Token");
+    const deploytoken2 =await token2.deploy();
+    console.log("Course Token Address : ", deploytoken2.address);
+
+    const coursenft = await ethers.getContractFactory("QCourse");
+    const deployNFT =await coursenft.deploy();
+    console.log("Course NFT Address : ", deployNFT.address);
+
+    const grad = await ethers.getContractFactory("QCertificate");
+    const deployCert =await grad.deploy();
+    console.log("Certificate NFT Address : ", deployCert.address);
+
+    const deploy =await School.deploy(deploytoken.address, deploytoken2.address, deployNFT.address, deployCert.address);
+    console.log("School contract address : ",deploy.address);
+} 
+
+Main().catch((error) => {
     console.error(error);
-    process.exit(1);
-})
+    process.exitCode = 1;
+  });
